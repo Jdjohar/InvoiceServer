@@ -63,6 +63,39 @@ router.get('/allTransactions', async (req, res) => {
     }
 });
 
+router.get('/deltransaction/:transactionid', async (req, res) => {
+    try {
+        const transactionid = req.params.transactionid;
+        let authtoken = req.headers.authorization;
+
+        // Verify JWT token
+        const decodedToken = jwt.verify(authtoken, jwrsecret);
+        console.log(decodedToken);
+
+        const result = await Transactions.findByIdAndDelete(transactionid);
+
+        if (result) {
+            res.json({
+                Success: true,
+                message: "teammember deleted successfully"
+            });
+        } else {
+            res.status(404).json({
+                Success: false,
+                message: "teammember not found"
+            });
+        }
+    } catch (error) {
+        console.error(error);
+        // Handle token verification errors
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({ message: 'Unauthorized: Invalid token' });
+        }
+        // Handle other errors
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
 
 // Endpoint to get the current month's received amount for a specific user
 router.get('/currentMonthReceivedAmount/:userId', async (req, res) => {
@@ -90,15 +123,15 @@ router.get('/currentMonthReceivedAmount/:userId', async (req, res) => {
             {
                 $group: {
                     _id: null,
-                    totalReceivedAmount: { $sum: "$paidamount" }
+                    curMonReceivedAmount: { $sum: "$paidamount" }
                 }
             }
         ]);
 
         if (result.length > 0) {
-            res.json({ totalReceivedAmount: result[0].totalReceivedAmount });
+            res.json({ curMonReceivedAmount: result[0].curMonReceivedAmount });
         } else {
-            res.json({ totalReceivedAmount: 0 });
+            res.json({ curMonReceivedAmount: 0 });
         }
     } catch (error) {
         console.error(error);
@@ -106,17 +139,11 @@ router.get('/currentMonthReceivedAmount/:userId', async (req, res) => {
     }
 });
 
-
-
-
-
 // Endpoint to get the current month's received amount for a specific user
 router.get('/currentMonthReceivedAmount2/:userId', async (req, res) => {
     try {
         const userId = req.params.userId;
         const {startOfMonth, endOfMonth} =  req.body;
-     
-
          // Parse and format the dates using moment
         //  const formattedStartDate = moment(startOfMonth).format('YYYY-MM-DD');
         //  const formattedEndDate = moment(endOfMonth).format('YYYY-MM-DD');
@@ -151,11 +178,6 @@ router.get('/currentMonthReceivedAmount2/:userId', async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
-
-
-
-
-
 
 router.get('/customDateReceivedAmount/:userid', async (req, res) => {
     try {
@@ -208,8 +230,6 @@ router.get('/customDateReceivedAmount/:userid', async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
-
-
 
 router.post('/send-invoice-email', async (req, res) => {
     const {
@@ -308,7 +328,6 @@ router.post('/send-invoice-email', async (req, res) => {
         res.status(500).json({ success: false, error: 'Failed to send email.' });
     }
 });
-
 
 module.exports = router;
 router.post('/send-deposit-email', async (req, res) => {
@@ -506,7 +525,6 @@ router.post('/send-estimate-email', async (req, res) => {
         res.status(500).json({ success: false, error: 'Failed to send email.' });
     }
 });
-
 
 router.get('/dashboard/:userid', async (req, res) => {
     try {
@@ -1876,7 +1894,8 @@ router.get('/gettransactiondata/:invoiceid', async (req, res) => {
         // Verify JWT token
         const decodedToken = jwt.verify(authtoken, jwrsecret);
         console.log(decodedToken);
-        const transactiondata = (await Transactions.find({ invoiceid: invoiceid }));
+        const transactiondata = await Transactions.find({ invoiceid: invoiceid }).sort({ paiddate: 1 });
+        // const transactiondata = (await Transactions.find({ invoiceid: invoiceid }));
         res.json(transactiondata);
     } catch (error) {
         console.error(error);
@@ -1888,6 +1907,7 @@ router.get('/gettransactiondata/:invoiceid', async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+
 
 // Fetch invoicedetail from a userid
 router.get('/invoicedata/:userid', async (req, res) => {
@@ -2810,8 +2830,6 @@ router.get('/timezones', (req, res) => {
     res.json(timezones);
 });
 
-
-
 // Fetch single category
 router.get('/getcategories/:categoryId', async (req, res) => {
     try {
@@ -3120,7 +3138,6 @@ router.post('/menu', async (req, res) => {
         res.status(500).json({ Success: false, message: 'Failed to create Menu', error: error.message });
     }
 });
-
 
 
 router.get('/menu/:restaurantId', async (req, res) => {

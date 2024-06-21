@@ -5,11 +5,14 @@ const mongoDB = require("./db")
 const nodemailer = require('nodemailer');
 const bodyParser = require('body-parser');
 var path = require('path');
+const { job } = require('./cron');
 mongoDB();
 
 // Set maximum payload size limit
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
+
+job.start();
 
 // Start the cron job
 // app.use((req,res,next)=>{
