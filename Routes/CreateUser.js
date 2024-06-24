@@ -98,46 +98,181 @@ router.get('/deltransaction/:transactionid', async (req, res) => {
 
 
 // Endpoint to get the current month's received amount for a specific user
+// router.get('/currentMonthReceivedAmount/:userId', async (req, res) => {
+//     try {
+//         const userId = req.params.userId;
+//         const startOfMonth = moment().startOf('month');
+//         const endOfMonth = moment().endOf('month');
+
+//          // Parse and format the dates using moment
+//          const formattedStartDate = moment(startOfMonth).format('YYYY-MM-DD');
+//          const formattedEndDate = moment(endOfMonth).format('YYYY-MM-DD');
+
+//         console.log(userId, formattedStartDate,formattedEndDate );
+
+//         const result = await Transactions.aggregate([
+//             {
+//                 $match: {
+//                     userid: userId,
+//                     paiddate: {
+//                         $gte: formattedStartDate,
+//                         $lte: formattedEndDate
+//                     }
+//                 }
+//             },
+//             {
+//                 $group: {
+//                     _id: null,
+//                     curMonReceivedAmount: { $sum: "$paidamount" }
+//                 }
+//             }
+//         ]);
+
+//         if (result.length > 0) {
+//             res.json({ curMonReceivedAmount: result[0].curMonReceivedAmount });
+//         } else {
+//             res.json({ curMonReceivedAmount: 0 });
+//         }
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: 'Server error' });
+//     }
+// });
 router.get('/currentMonthReceivedAmount/:userId', async (req, res) => {
     try {
         const userId = req.params.userId;
         const startOfMonth = moment().startOf('month');
         const endOfMonth = moment().endOf('month');
 
-         // Parse and format the dates using moment
-         const formattedStartDate = moment(startOfMonth).format('YYYY-MM-DD');
-         const formattedEndDate = moment(endOfMonth).format('YYYY-MM-DD');
+        // Parse and format the dates using moment
+        const formattedStartDate = moment(startOfMonth).format('YYYY-MM-DD');
+        const formattedEndDate = moment(endOfMonth).format('YYYY-MM-DD');
 
-        console.log(userId, formattedStartDate,formattedEndDate );
-
-        const result = await Transactions.aggregate([
+        // Aggregate total amount from Invoices for the current month
+        const invoiceResult = await Invoice.aggregate([
             {
                 $match: {
                     userid: userId,
-                    paiddate: {
-                        $gte: formattedStartDate,
-                        $lte: formattedEndDate
+                    date: {
+                        $gte: new Date(formattedStartDate),
+                        $lte: new Date(formattedEndDate)
                     }
                 }
             },
             {
                 $group: {
                     _id: null,
-                    curMonReceivedAmount: { $sum: "$paidamount" }
+                    curMonTotalAmount: { $sum: "$total" }
                 }
             }
         ]);
 
-        if (result.length > 0) {
-            res.json({ curMonReceivedAmount: result[0].curMonReceivedAmount });
-        } else {
-            res.json({ curMonReceivedAmount: 0 });
-        }
+        const allTransactions = await Transactions.find({
+            userid: userId,
+            paiddate: {
+                $gte: formattedStartDate,
+                $lte: formattedEndDate
+            }
+        });
+
+        // Calculate the total paid amount
+        const totalPaidAmount = allTransactions.reduce(
+            (total, transaction) => total + parseFloat(transaction.paidamount),
+            0
+        );
+
+        // Calculate the unpaid amount
+        const curMonTotalAmount = invoiceResult.length > 0 ? invoiceResult[0].curMonTotalAmount : 0;
+        const curMonUnpaidAmount = curMonTotalAmount - totalPaidAmount;
+
+        res.json({
+            curMonTotalAmount,
+            curMonPaidAmount: totalPaidAmount,
+            curMonUnpaidAmount
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server error' });
     }
 });
+
+// router.get('/currentMonthReceivedAmount/:userId', async (req, res) => {
+//     try {
+//         const userId = req.params.userId;
+//         const startOfMonth = moment().startOf('month');
+//         const endOfMonth = moment().endOf('month');
+
+//         // Parse and format the dates using moment
+//         const formattedStartDate = moment(startOfMonth).format('YYYY-MM-DD');
+//         const formattedEndDate = moment(endOfMonth).format('YYYY-MM-DD');
+
+//         const receivedResult = await Transactions.aggregate([
+//             {
+//                 $match: {
+//                     userid: userId,
+//                     paiddate: {
+//                         $gte: formattedStartDate,
+//                         $lte: formattedEndDate
+//                     }
+//                 }
+//             },
+//             {
+//                 $group: {
+//                     _id: null,
+//                     curMonReceivedAmount: { $sum: "$paidamount" }
+//                 }
+//             }
+//         ]);
+
+//         const allTransactions = await Transactions.find({
+//             userid: userId,
+//             paiddate: {
+//                 $gte: formattedStartDate,
+//                 $lte: formattedEndDate
+//             }
+//         });
+
+//         // Calculate the total paid amount
+//         const totalPaidAmount = allTransactions.reduce(
+//             (total, transaction) => total + parseFloat(transaction.paidamount),
+//             0
+//         );
+
+//         // Calculate the unpaid amount
+//         const curMonReceivedAmount = receivedResult.length > 0 ? receivedResult[0].curMonReceivedAmount : 0;
+//         const curMonUnpaidAmount = curMonReceivedAmount - totalPaidAmount;
+
+//         res.json({
+//             curMonReceivedAmount,
+//             curMonPaidAmount: totalPaidAmount,
+//             curMonUnpaidAmount
+//         });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: 'Server error' });
+//     }
+// });
+
+router.get('/totalPaymentReceived/:userId', async (req, res) => {
+    try {
+      const userId = req.params.userId;
+  
+      // Fetch transactions for the user
+      const transactions = await Transactions.find({ userid: userId });
+  
+      // Calculate total payment received
+      const totalPaymentReceived = transactions.reduce(
+        (total, transaction) => total + parseFloat(transaction.paidamount),
+        0
+      );
+  
+      res.json({ totalPaymentReceived });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server error' });
+    }
+});
+
 
 // Endpoint to get the current month's received amount for a specific user
 router.get('/currentMonthReceivedAmount2/:userId', async (req, res) => {
