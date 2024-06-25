@@ -253,26 +253,81 @@ router.get('/currentMonthReceivedAmount/:userId', async (req, res) => {
 //     }
 // });
 
+// router.get('/totalPaymentReceived/:userId', async (req, res) => {
+//     try {
+//       const userId = req.params.userId;
+  
+//       // Fetch transactions for the user
+//       const transactions = await Transactions.find({ userid: userId });
+  
+//       // Calculate total payment received
+//       const totalPaymentReceived = transactions.reduce(
+//         (total, transaction) => total + parseFloat(transaction.paidamount),
+//         0
+//       );
+  
+//       res.json({ totalPaymentReceived });
+//     } catch (error) {
+//       console.error(error);
+//       res.status(500).json({ message: 'Server error' });
+//     }
+// });
+
 router.get('/totalPaymentReceived/:userId', async (req, res) => {
     try {
-      const userId = req.params.userId;
-  
-      // Fetch transactions for the user
-      const transactions = await Transactions.find({ userid: userId });
-  
-      // Calculate total payment received
-      const totalPaymentReceived = transactions.reduce(
-        (total, transaction) => total + parseFloat(transaction.paidamount),
-        0
-      );
-  
-      res.json({ totalPaymentReceived });
+        const userId = req.params.userId;
+
+        // Fetch transactions for the user
+        const transactions = await Transactions.find({ userid: userId });
+
+        // Fetch invoices for the user
+        const invoices = await Invoice.find({ userid: userId });
+
+        // Calculate total payment received from transactions
+        const totalPaymentReceivedFromTransactions = transactions.reduce(
+            (total, transaction) => total + parseFloat(transaction.paidamount),
+            0
+        );
+
+        // Calculate total invoice amount
+        const totalInvoiceAmount = invoices.reduce(
+            (total, invoice) => total + parseFloat(invoice.total),
+            0
+        );
+
+        // Calculate unpaid amount
+        const totalUnpaidAmount = totalInvoiceAmount - totalPaymentReceivedFromTransactions;
+
+        res.json({
+            totalPaymentReceived: totalPaymentReceivedFromTransactions,
+            totalInvoiceAmount,
+            totalUnpaidAmount
+        });
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Server error' });
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
     }
 });
 
+router.get('/overdueInvoices/:userId', async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const currentDate = new Date();
+
+        const overdueInvoices = await Invoice.find({
+            userid: userId,
+            duedate: { $lt: currentDate },
+            status: { $ne: 'Paid' }
+        });
+
+        const overdueCount = overdueInvoices.length;
+
+        res.json({ overdueCount, overdueInvoices });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
 
 // Endpoint to get the current month's received amount for a specific user
 router.get('/currentMonthReceivedAmount2/:userId', async (req, res) => {
