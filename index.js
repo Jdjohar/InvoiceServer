@@ -12,7 +12,7 @@ mongoDB();
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 
-job.start();
+job.start(); 
 
 // Start the cron job
 // app.use((req,res,next)=>{
