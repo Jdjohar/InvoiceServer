@@ -317,7 +317,7 @@ router.get('/overdueInvoices/:userId', async (req, res) => {
         const overdueInvoices = await Invoice.find({
             userid: userId,
             duedate: { $lt: currentDate },
-            status: { $ne: 'Paid' }
+            status: 'Saved'
         });
 
         const overdueCount = overdueInvoices.length;
@@ -329,51 +329,148 @@ router.get('/overdueInvoices/:userId', async (req, res) => {
     }
 });
 
-// Endpoint to get the current month's received amount for a specific user
-router.get('/currentMonthReceivedAmount2/:userId', async (req, res) => {
-    try {
-        const userId = req.params.userId;
-        const {startOfMonth, endOfMonth} =  req.body;
-         // Parse and format the dates using moment
-        //  const formattedStartDate = moment(startOfMonth).format('YYYY-MM-DD');
-        //  const formattedEndDate = moment(endOfMonth).format('YYYY-MM-DD');
+// router.get('/currentMonthReceivedAmount2/:userid', async (req, res) => {
+//     try {
+//         const userid = req.params.userid;
+//         const { startOfMonth, endOfMonth } = req.query;
 
-        console.log(userId, "startOfMonth", startOfMonth, "endOfMonth", endOfMonth );
+//         // Ensure dates are correctly formatted
+//          const formattedStartDate = moment(startOfMonth).format('YYYY-MM-DD');
+//          const formattedEndDate = moment(endOfMonth).format('YYYY-MM-DD');
+//         // const formattedStartDate = moment(startOfMonth).startOf('day').toDate();
+//         // const formattedEndDate = moment(endOfMonth).endOf('day').toDate();
+
+//         console.log(userid, "startOfMonth", formattedStartDate, "endOfMonth", formattedEndDate);
+
+//         const result = await Transactions.aggregate([
+//             {
+//                 $match: {
+//                     userid: userid,
+//                     paiddate: {
+//                         $gte: formattedStartDate,
+//                         $lte: formattedEndDate
+//                     }
+//                 }
+//             },
+//             {
+//                 $group: {
+//                     _id: null,
+//                     totalReceivedAmount: { $sum: "$paidamount" }
+//                 }
+//             }
+//         ]);
+
+//         console.log(result); // Log the result to see what is returned
+
+//         if (result.length > 0) {
+//             res.json({ totalReceivedAmount: result[0].totalReceivedAmount });
+//         } else {
+//             res.json({ totalReceivedAmount: 0 });
+//         }
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: 'Server error' });
+//     }
+// });
+
+router.get('/currentMonthReceivedAmount2/:userid', async (req, res) => {
+    try {
+        const userid = req.params.userid;
+        const { startOfMonth, endOfMonth } = req.query;
+
+        const formattedStartDate = moment(startOfMonth).format('YYYY-MM-DD');
+        const formattedEndDate = moment(endOfMonth).format('YYYY-MM-DD');
 
         const result = await Transactions.aggregate([
             {
                 $match: {
-                    userid: userId,
+                    userid: userid,
                     paiddate: {
-                        $gte: startOfMonth,
-                        $lte: endOfMonth
+                        $gte: formattedStartDate,
+                        $lte: formattedEndDate
                     }
                 }
             },
             {
                 $group: {
-                    _id: null,
+                    _id: "$paiddate",
                     totalReceivedAmount: { $sum: "$paidamount" }
                 }
+            },
+            {
+                $sort: { _id: 1 } 
             }
         ]);
 
-        if (result.length > 0) {
-            res.json({ totalReceivedAmount: result[0].totalReceivedAmount });
-        } else {
-            res.json({ totalReceivedAmount: 0 });
-        }
+        res.json(result);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server error' });
     }
 });
 
+
+// router.get('/currentMonthReceivedAmount2/:userid', async (req, res) => {
+//     try {
+//         const userid = req.params.userid;
+//         const { startOfMonth, endOfMonth } = req.query;
+
+//         // Ensure correct date format
+//         const formattedStartDate = moment(startOfMonth).startOf('day').toDate();
+//         const formattedEndDate = moment(endOfMonth).endOf('day').toDate();
+        
+//         console.log(userid, "Start Date:", formattedStartDate, "End Date:", formattedEndDate);
+
+//         const result = await Transactions.aggregate([
+//             {
+//                 $match: {
+//                     userid: userid,
+//                     paiddate: {
+//                         $gte: formattedStartDate,
+//                         $lte: formattedEndDate
+//                     }
+//                 }
+//             },
+//             {
+//                 $group: {
+//                     _id: {
+//                         year: { $year: "$paiddate" },
+//                         month: { $month: "$paiddate" }
+//                     },
+//                     totalReceivedAmount: { $sum: "$paidamount" }
+//                 }
+//             },
+//             {
+//                 $sort: { "_id.year": 1, "_id.month": 1 }
+//             }
+//         ]);
+
+//         console.log("Aggregation Result:", result);
+
+//         const receivedAmounts = {};
+//         result.forEach(r => {
+//             const yearMonth = `${r._id.year}-${String(r._id.month).padStart(2, '0')}`;
+//             receivedAmounts[yearMonth] = r.totalReceivedAmount;
+//         });
+
+//         console.log("Received Amounts:", receivedAmounts);
+
+//         res.json(receivedAmounts);
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: 'Server error' });
+//     }
+// });
+
+
+
+
+
 router.get('/customDateReceivedAmount/:userid', async (req, res) => {
     try {
         const { userid } = req.params;
-        const startDate = "2024-05-01"
-        const endDate = "2024-05-31"
+        const startDate = "2024-06-01"
+        const endDate = "2024-06-27"
 
         console.log('Received startDate:', startDate);
         console.log('Received endDate:', endDate);
@@ -518,6 +615,7 @@ router.post('/send-invoice-email', async (req, res) => {
         res.status(500).json({ success: false, error: 'Failed to send email.' });
     }
 });
+
 
 module.exports = router;
 router.post('/send-deposit-email', async (req, res) => {

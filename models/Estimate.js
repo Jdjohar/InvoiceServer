@@ -58,6 +58,9 @@ const EstimateSchema = new Schema({
     userid:{
         type: String,
     },
+    noteimageUrl:{
+        type: String,
+    },
     convertedToInvoice: {
         type: Boolean,
         default: false,
