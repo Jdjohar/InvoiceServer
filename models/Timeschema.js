@@ -19,6 +19,7 @@ const TimeSchema = new Schema({
     endTime: { type: String },
     
     
+  timeInSeconds: { type: String },
   totalTime: Object, 
 });
 

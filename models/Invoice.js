@@ -54,6 +54,9 @@ const InvoiceSchema = new Schema({
     tax: {
         type: String,
     },
+    job: {
+        type: String,
+    },
     taxpercentage: {
         type: Number,
         default: 0,
