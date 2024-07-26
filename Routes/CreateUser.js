@@ -22,11 +22,15 @@ const Invoice = require('../models/Invoice');
 const Estimate = require('../models/Estimate');
 const Transactions = require('../models/Transactions');
 const Deposit = require('../models/Deposit');
+const Signature = require('../models/Signature')
+const Ownwesignature = require('../models/Ownwesignature')
+const CustomerSignatureSchema = require('../models/CustomerSignature')
 const crypto = require('crypto');
 const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 
 const getCurrencySign = (currencyType) => {
     switch (currencyType) {
@@ -40,7 +44,243 @@ const getCurrencySign = (currencyType) => {
     }
 };
 
+// router.post('/signature', (req, res) => {
+//     const { signature } = req.body;
+//     const base64Data = signature.replace(/^data:image\/png;base64,/, '');
+  
+//     fs.writeFile('signature.png', base64Data, 'base64', (err) => {
+//       if (err) {
+//         console.error('Error saving signature:', err);
+//         res.status(500).send('Error saving signature');
+//       } else {
+//         res.send('Signature saved successfully');
+//       }
+//     });
+//   });
 
+router.get('/check-signature/:ownerId', (req, res) => {
+    const ownerId = req.params.ownerId;
+  
+    Ownwesignature.findOne({ ownerId })
+      .then(signature => {
+        if (signature) {
+          res.json({ hasSignature: true, signatureData: signature.data });
+        } else {
+          res.json({ hasSignature: false });
+        }
+      })
+      .catch(err => res.json({ hasSignature: false }));
+  });
+
+  router.get('/getallesigncustomerdata', async (req, res) => {
+    try {
+        // Fetch all customer data
+        let authtoken = req.headers.authorization;
+
+        // Verify JWT token
+        const decodedToken = jwt.verify(authtoken, jwrsecret);
+        console.log(decodedToken);
+        const allCustomerData = await CustomerSignatureSchema.find();
+
+        if (allCustomerData.length === 0) {
+            return res.status(404).json({ message: 'No customer data found' });
+        }
+
+        res.json(allCustomerData);
+    } catch (error) {
+        console.error(error);
+        // Handle token verification errors
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({ message: 'Unauthorized: Invalid token' });
+        }
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+  router.get('/getemailcustomerdata/:email', async (req, res) => {
+    try {
+        const { email } = req.params;
+        const customeremailData = await CustomerSignatureSchema.find({"customerEmail":email}); // Assuming you have an `Owner` model
+
+        if (!customeremailData) {
+            return res.status(404).json({ message: 'Customer not found' });
+        }
+
+        res.json(customeremailData);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+router.get('/checkcustomersignature/:email', (req, res) => {
+    const { email } = req.params;
+      CustomerSignatureSchema.findOne({customerEmail: email })
+      .then(signature => {
+        if (signature) {
+          res.json({ hasSignature: true, signatureData: signature });
+        } else {
+          res.json({ hasSignature: false });
+        }
+      })
+      .catch(err => res.json({ hasSignature: false }));
+  });
+
+router.post('/ownersignature', (req, res) => {
+    const { signature, ownerId, email,companyname } = req.body;
+  
+    const newSignature = new Ownwesignature({
+      ownerId,
+      email,
+      companyname,
+      data: signature,
+    });
+  
+    newSignature.save()
+      .then(signature => res.json({ message: 'Signature saved successfully', id: signature._id }))
+      .catch(err => res.status(500).send('Error saving signature'));
+});
+
+router.post('/customersignature', (req, res) => {
+    const { customersign, estimateId, customerName, customerEmail,documentNumber,lastupdated } = req.body;
+
+    if (!estimateId) {
+      return res.status(400).json({ message: 'Invalid Estimate ID' });
+    }
+
+    const newSignature = new CustomerSignatureSchema({
+        estimateId,
+        customerName,
+        customerEmail,
+        customersign,
+        documentNumber,
+        lastupdated
+    });
+
+    newSignature.save()
+        .then(signature => res.json({ message: 'Signature saved successfully', id: signature._id }))
+        .catch(err => res.status(500).send('Error saving signature'));
+});
+
+// Add this route to update customer signature
+router.put('/customersignature/:email', async (req, res) => {
+    const { email } = req.params;
+    const { customersign, estimateId, customerName, documentNumber, status,lastupdated } = req.body;
+  
+    try {
+      const customerSignature = await CustomerSignatureSchema.findOneAndUpdate(
+        { customerEmail: email },
+        {
+          customersign,
+          estimateId,
+          customerName,
+          documentNumber,
+          status,
+          lastupdated
+        },
+        { new: true }
+      );
+  
+      if (customerSignature) {
+        res.status(200).json({ message: 'Customer signature updated successfully', customerSignature });
+      } else {
+        res.status(404).json({ message: 'Customer signature not found' });
+      }
+    } catch (error) {
+      console.error('Error updating customer signature:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  router.delete('/customersignature/:email', async (req, res) => {
+    const { email } = req.params;
+
+    try {
+        const customerSignature = await CustomerSignatureSchema.findOneAndDelete({ customerEmail: email });
+
+        if (customerSignature) {
+            res.status(200).json({ message: 'Customer signature deleted successfully', customerSignature });
+        } else {
+            res.status(404).json({ message: 'Customer signature not found' });
+        }
+    } catch (error) {
+        console.error('Error deleting customer signature:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+  
+
+// Backend route to fetch owner data by ownerId
+router.get('/getownerdata/:ownerId', async (req, res) => {
+    try {
+        const ownerId = req.params.ownerId;
+        let authtoken = req.headers.authorization;
+
+        // Verify JWT token
+        const decodedToken = jwt.verify(authtoken, jwrsecret);
+        console.log(decodedToken);
+
+        // Fetch owner data from the database
+        const ownerData = await Ownwesignature.find({"ownerId":ownerId}); // Assuming you have an `Owner` model
+
+        if (!ownerData) {
+            return res.status(404).json({ message: 'Owner not found' });
+        }
+
+        res.json(ownerData);
+    } catch (error) {
+        console.error(error);
+        // Handle token verification errors
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({ message: 'Unauthorized: Invalid token' });
+        }
+        // Handle other errors
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+router.get('/getemailownerdata/:ownerId', async (req, res) => {
+    try {
+        const ownerId = req.params.ownerId;
+        // let authtoken = req.headers.authorization;
+
+        // Verify JWT token
+        // const decodedToken = jwt.verify(authtoken, jwrsecret);
+        // console.log(decodedToken);
+
+        // Fetch owner data from the database
+        const ownerData = await Ownwesignature.find({"ownerId":ownerId}); // Assuming you have an `Owner` model
+
+        if (!ownerData) {
+            return res.status(404).json({ message: 'Owner not found' });
+        }
+
+        res.json(ownerData);
+    } catch (error) {
+        console.error(error);
+        // Handle token verification errors
+        // if (error.name === 'JsonWebTokenError') {
+        //     return res.status(401).json({ message: 'Unauthorized: Invalid token' });
+        // }
+        // Handle other errors
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+  
+  // Get signature route
+router.get('/ownersignature/:id', (req, res) => {
+    Ownwesignature.findById(req.params.id)
+      .then(signature => {
+        if (signature) {
+          res.json({ data: signature.data });
+        } else {
+          res.status(404).send('Signature not found');
+        }
+      })
+      .catch(err => res.status(500).send('Error retrieving signature'));
+});
 
 // Transactions API
 router.get('/allTransactions', async (req, res) => {
@@ -727,6 +967,8 @@ router.post('/send-estimate-email', async (req, res) => {
         EstimateNumber,
         amountdue,
         currencyType,
+        estimateId,
+        ownerId,
         amountdue1
     } = req.body;
 
@@ -778,6 +1020,7 @@ router.post('/send-estimate-email', async (req, res) => {
                 </div>
                 <div style="margin: 20px 0px 10px;">
                     <p style="color:#222">This email contains a unique link just for you. Please do not share this email or link or others will have access to your document.</p>
+                    <a href="https://invoice-al.vercel.app/customersign?estimateId=${estimateId}" style="display:inline-block;padding:10px 20px;background-color:#4CAF50;color:#fff;text-decoration:none;border-radius:5px;">View this Estimate</a>
                 </div>
             </section>
             <section style="font-family:sans-serif; width: 50%; margin: auto; background-color:#f5f4f4; padding: 35px 30px; margin-bottom: 40px;">
@@ -952,6 +1195,7 @@ router.post('/login', [
                 isTeamMember: false, 
                 taxPercentage: user.taxPercentage,
                 TaxName: user.TaxName,
+                companyname: user.companyname,
             });
         }
       }
@@ -2137,6 +2381,28 @@ router.get('/getestimatedata/:estimateid', async (req, res) => {
     }
 });
 
+router.get('/getemailestimatedata/:estimateid', async (req, res) => {
+    try {
+        const estimateid = req.params.estimateid;
+        // let authtoken = req.headers.authorization;
+
+        // Verify JWT token
+        // const decodedToken = jwt.verify(authtoken, jwrsecret);
+        // console.log(decodedToken);
+        const estimatedetail = await Estimate.findById(estimateid);
+
+        res.json(estimatedetail);
+    } catch (error) {
+        console.error(error);
+        // Handle token verification errors
+        // if (error.name === 'JsonWebTokenError') {
+        //     return res.status(401).json({ message: 'Unauthorized: Invalid token' });
+        // }
+        // Handle other errors
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
 router.get('/lastinvoicenumber/:userid', async (req, res) => {
     try {
         const userid = req.params.userid;
@@ -2217,6 +2483,28 @@ router.get('/gettransactiondata/:invoiceid', async (req, res) => {
         if (error.name === 'JsonWebTokenError') {
             return res.status(401).json({ message: 'Unauthorized: Invalid token' });
         }
+        // Handle other errors
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+router.get('/getemailtransactiondata/:invoiceid', async (req, res) => {
+    try {
+        const invoiceid = req.params.invoiceid;
+        // let authtoken = req.headers.authorization;
+
+        // Verify JWT token
+        // const decodedToken = jwt.verify(authtoken, jwrsecret);
+        // console.log(decodedToken);
+        const transactiondata = await Transactions.find({ invoiceid: invoiceid }).sort({ paiddate: 1 });
+        // const transactiondata = (await Transactions.find({ invoiceid: invoiceid }));
+        res.json(transactiondata);
+    } catch (error) {
+        console.error(error);
+        // Handle token verification errors
+        // if (error.name === 'JsonWebTokenError') {
+        //     return res.status(401).json({ message: 'Unauthorized: Invalid token' });
+        // }
         // Handle other errors
         res.status(500).json({ message: 'Internal server error' });
     }
@@ -2443,6 +2731,27 @@ router.get('/getsignupdata/:userid', async (req, res) => {
         if (error.name === 'JsonWebTokenError') {
             return res.status(401).json({ message: 'Unauthorized: Invalid token' });
         }
+        // Handle other errors
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+router.get('/getemailsignupdata/:userid', async (req, res) => {
+    try {
+        const userid = req.params.userid;
+        // let authtoken = req.headers.authorization;
+
+        // Verify JWT token
+        // const decodedToken = jwt.verify(authtoken, jwrsecret);
+        // console.log(decodedToken);
+        const signupdetail = await User.findById(userid);
+        res.json(signupdetail);
+    } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        // Handle token verification errors
+        // if (error.name === 'JsonWebTokenError') {
+        //     return res.status(401).json({ message: 'Unauthorized: Invalid token' });
+        // }
         // Handle other errors
         res.status(500).json({ message: 'Internal server error' });
     }
