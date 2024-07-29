@@ -1,4 +1,5 @@
 const express = require('express')
+const cors = require('cors')
 const app = express()
 const port = 3001
 const mongoDB = require("./db")
@@ -11,6 +12,7 @@ mongoDB();
 // Set maximum payload size limit
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
+app.use(cors())
 
 job.start(); 
 
