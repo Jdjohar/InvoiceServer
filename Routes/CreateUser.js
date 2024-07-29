@@ -75,6 +75,7 @@ router.get('/check-signature/:ownerId', (req, res) => {
   router.get('/getallesigncustomerdata', async (req, res) => {
     try {
         // Fetch all customer data
+        let userid = req.params.userid;
         let authtoken = req.headers.authorization;
 
         // Verify JWT token
@@ -101,6 +102,11 @@ router.get('/check-signature/:ownerId', (req, res) => {
   router.get('/getemailcustomerdata/:email', async (req, res) => {
     try {
         const { email } = req.params;
+        let authtoken = req.headers.authorization;
+
+        // Verify JWT token
+        const decodedToken = jwt.verify(authtoken, jwrsecret);
+        console.log(decodedToken);
         const customeremailData = await CustomerSignatureSchema.find({"customerEmail":email}); // Assuming you have an `Owner` model
 
         if (!customeremailData) {
@@ -110,6 +116,9 @@ router.get('/check-signature/:ownerId', (req, res) => {
         res.json(customeremailData);
     } catch (error) {
         console.error(error);
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({ message: 'Unauthorized: Invalid token' });
+        }
         res.status(500).json({ message: 'Internal server error' });
     }
 });
