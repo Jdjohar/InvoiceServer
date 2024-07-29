@@ -113,7 +113,7 @@ router.get('/check-signature/:ownerId', (req, res) => {
             return res.status(404).json({ message: 'Customer not found' });
         }
 
-        res.json(customeremailData);
+        res.status(200).json(customeremailData);
     } catch (error) {
         console.error(error);
         if (error.name === 'JsonWebTokenError') {
