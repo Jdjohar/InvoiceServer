@@ -99,7 +99,7 @@ router.get('/check-signature/:ownerId', (req, res) => {
 });
 
 
-  router.get('/getemailcustomerdata/:email', async (req, res) => {
+  router.get('/getesigncustomerdata/:email', async (req, res) => {
     try {
         const { email } = req.params;
         let authtoken = req.headers.authorization;
@@ -112,7 +112,6 @@ router.get('/check-signature/:ownerId', (req, res) => {
         if (!customeremailData) {
             return res.status(404).json({ message: 'Customer not found' });
         }
-
         res.status(200).json(customeremailData);
     } catch (error) {
         console.error(error);
