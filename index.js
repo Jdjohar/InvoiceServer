@@ -12,58 +12,31 @@ mongoDB();
 // Set maximum payload size limit
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
-app.use(cors())
+// app.use(cors())
 
 job.start(); 
 
-// Start the cron job
-// app.use((req,res,next)=>{
-//   // res.setHeader("Access-Control-Allow-Origin","https://grit.homes");
-//   // res.setHeader("Access-Control-Allow-Origin","https://mycabinets.vercel.app");
-//   res.setHeader("Access-Control-Allow-Origin","http://localhost:3000");
-//   res.header(
-//     "Access-Control-Allow-Headers",
-//     "Origin, X-Requested-With, Content-Type, Accept"
-//   );
-//   next();
-// })
-
-app.use((req, res, next) => {
-  // res.setHeader("Access-Control-Allow-Origin", "https://restro-wbno.vercel.app");
-  // res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
-  const corsWhitelist = [
+const corsOptions = {
+  origin: [
     "http://localhost:5173",
     "https://invoice-al.vercel.app",
-];
-if (corsWhitelist.indexOf(req.headers.origin) !== -1) {
-    res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Origin, X-Requested-With, Accept");
-}
-  // res.setHeader("Access-Control-Allow-Origin", "* , https://restro-wbno.vercel.app");
-  // res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
-  // res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Origin, X-Requested-With, Accept");
-  next();
-});
+  ],
+  methods: "GET, POST, OPTIONS, PUT, DELETE",
+  allowedHeaders: "Content-Type, Authorization, Origin, X-Requested-With, Accept"
+};
+
+app.use(cors(corsOptions));
 
 // app.use((req, res, next) => {
-//   // Allow multiple domains
-//   const allowedOrigins = [
-//     "http://localhost:3000",
-//     "https://mycabinets.vercel.app",
-//   ];
-
-//   const origin = req.headers.origin;
-
-//   if (allowedOrigins.includes(origin)) {
-//     res.setHeader("Access-Control-Allow-Origin", origin);
-//   }
-
-//   res.header(
-//     "Access-Control-Allow-Headers",
-//     "Origin, X-Requested-With, Content-Type, Accept"
-//   );
-
+//   const corsWhitelist = [
+//     "http://localhost:5173",
+//     "https://invoice-al.vercel.app",
+// ];
+// if (corsWhitelist.indexOf(req.headers.origin) !== -1) {
+//     res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
+//     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
+//     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Origin, X-Requested-With, Accept");
+// }
 //   next();
 // });
 
@@ -76,7 +49,6 @@ app.get('/', (req, res) => {
 
 app.use(express.json())
 app.use('/api', require("./Routes/CreateUser"));
-// app.use('/api', require("./Routes/Createcategory"));
 app.use('/api', require("./Routes/DisplayData"));
 app.use('/api', require("./Routes/OrderData"));
 app.use('/api', require("./Routes/TestApi"));
