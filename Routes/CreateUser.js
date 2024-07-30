@@ -2092,12 +2092,14 @@ router.post('/updateinvoicedata/:invoiceid', async (req, res) => {
 router.post('/updateestimateData/:estimateid', async (req, res) => {
     try {
         const estimateid = req.params.estimateid;
-        const { subtotal, total, items, emailsent, discountTotal, ...updatedestimateData } = req.body; // Ensure this matches your MongoDB schema
+        const { subtotal, total, items, emailsent, discountTotal, isAddSignature, isCustomerSign, ...updatedestimateData } = req.body; // Ensure this matches your MongoDB schema
 
         // Add the updated subtotal and total to the incoming data
         updatedestimateData.subtotal = subtotal;
         updatedestimateData.total = total;
         updatedestimateData.discountTotal = discountTotal;
+        updatedestimateData.isAddSignature = isAddSignature;
+        updatedestimateData.isCustomerSign = isCustomerSign;
 
         // Update or replace the 'items' field
         updatedestimateData.items = items;
