@@ -100,15 +100,15 @@ router.get('/check-signature/:ownerId', (req, res) => {
 });
 
 
-  router.get('/getesigncustomerdata/:email', async (req, res) => {
+  router.get('/getesigncustomerdata/:userEmail', async (req, res) => {
     try {
-        const { email } = req.params;
+        const { userEmail } = req.params;
         let authtoken = req.headers.authorization;
 
         // Verify JWT token
         const decodedToken = jwt.verify(authtoken, jwrsecret);
         console.log(decodedToken);
-        const customeremailData = await CustomerSignatureSchema.find({"customerEmail":email}); // Assuming you have an `Owner` model
+        const customeremailData = await CustomerSignatureSchema.find({"userEmail":userEmail}); // Assuming you have an `Owner` model
 
         if (!customeremailData) {
             return res.status(404).json({ message: 'Customer not found' });
@@ -180,7 +180,7 @@ router.put('/update-ownersignature', async (req, res) => {
 
 
 router.post('/customersignature', (req, res) => {
-    const { customersign, estimateId, customerName, customerEmail,documentNumber,lastupdated } = req.body;
+    const { customersign, estimateId, customerName,userEmail, customerEmail,documentNumber,lastupdated } = req.body;
 
     if (!estimateId) {
       return res.status(400).json({ message: 'Invalid Estimate ID' });
@@ -190,6 +190,7 @@ router.post('/customersignature', (req, res) => {
         estimateId,
         customerName,
         customerEmail,
+        userEmail,
         customersign,
         documentNumber,
         lastupdated
@@ -203,7 +204,7 @@ router.post('/customersignature', (req, res) => {
 // Add this route to update customer signature
 router.put('/customersignature/:email', async (req, res) => {
     const { email } = req.params;
-    const { customersign, estimateId, customerName, documentNumber, status,lastupdated } = req.body;
+    const { customersign, estimateId,userEmail, customerName, documentNumber, status,lastupdated } = req.body;
   
     try {
       const customerSignature = await CustomerSignatureSchema.findOneAndUpdate(
@@ -212,6 +213,7 @@ router.put('/customersignature/:email', async (req, res) => {
           customersign,
           estimateId,
           customerName,
+          userEmail,
           documentNumber,
           status,
           lastupdated
