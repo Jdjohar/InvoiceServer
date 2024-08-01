@@ -71,6 +71,7 @@ router.get('/check-signature/:ownerId', (req, res) => {
       })
       .catch(err => res.json({ hasSignature: false }));
   });
+  
 
   router.get('/getallesigncustomerdata', async (req, res) => {
     try {
@@ -149,6 +150,34 @@ router.post('/ownersignature', (req, res) => {
       .then(signature => res.json({ message: 'Signature saved successfully', id: signature._id }))
       .catch(err => res.status(500).send('Error saving signature'));
 });
+
+// Route for updating an existing signature
+router.put('/update-ownersignature', async (req, res) => {
+    const { signature, ownerId, email, companyname } = req.body;
+
+    // console.log('Update Request Data:', { signature, ownerId, email, companyname });
+
+    try {
+        const updatedSignature = await Ownwesignature.findOneAndUpdate(
+            { ownerId }, 
+            { data: signature, email, companyname }, 
+            { new: true }
+        );
+
+        // console.log('Updated Signature:', updatedSignature);
+
+        if (updatedSignature) {
+            res.json({ message: 'Signature updated successfully', signature: updatedSignature });
+        } else {
+            res.status(404).json({ message: 'Signature not found for this ownerId' });
+        }
+    } catch (err) {
+        console.error('Error updating signature:', err);
+        res.status(500).send('Error updating signature');
+    }
+});
+
+
 
 router.post('/customersignature', (req, res) => {
     const { customersign, estimateId, customerName, customerEmail,documentNumber,lastupdated } = req.body;
