@@ -7,9 +7,15 @@ const CustomerSignatureSchema = new Schema({
         required: true, 
         ref: 'Estimate' 
     },
-    userEmail: {  
+    userid: {  
         type: String, 
         required: true 
+    },
+    ownerEmail: {  
+        type: String, 
+    },
+    ownerId: {  
+        type: String, 
     },
     customerName: { 
         type: String, 

@@ -100,15 +100,15 @@ router.get('/check-signature/:ownerId', (req, res) => {
 });
 
 
-  router.get('/getesigncustomerdata/:userEmail', async (req, res) => {
+  router.get('/getesigncustomerdata/:userid', async (req, res) => {
     try {
-        const { userEmail } = req.params;
+        const { userid } = req.params;
         let authtoken = req.headers.authorization;
 
         // Verify JWT token
         const decodedToken = jwt.verify(authtoken, jwrsecret);
         console.log(decodedToken);
-        const customeremailData = await CustomerSignatureSchema.find({"userEmail":userEmail}); // Assuming you have an `Owner` model
+        const customeremailData = await CustomerSignatureSchema.find({"userid":userid}); // Assuming you have an `Owner` model
 
         if (!customeremailData) {
             return res.status(404).json({ message: 'Customer not found' });
@@ -123,17 +123,17 @@ router.get('/check-signature/:ownerId', (req, res) => {
     }
 });
 
-router.get('/checkcustomersignature/:email', (req, res) => {
-    const { email } = req.params;
-      CustomerSignatureSchema.findOne({customerEmail: email })
+router.get('/checkcustomersignature/:estimateIds', (req, res) => {
+    const { estimateIds } = req.params;
+      CustomerSignatureSchema.findOne({estimateId: estimateIds })
       .then(signature => {
         if (signature) {
-          res.json({ hasSignature: true, signatureData: signature });
+          res.status(200).json({ hasSignature: true, signatureData: signature });
         } else {
-          res.json({ hasSignature: false });
+          res.status(200).json({ hasSignature: false });
         }
       })
-      .catch(err => res.json({ hasSignature: false }));
+      .catch(err => res.status(200).json({ hasSignature: false }));
   });
 
 router.post('/ownersignature', (req, res) => {
@@ -180,7 +180,7 @@ router.put('/update-ownersignature', async (req, res) => {
 
 
 router.post('/customersignature', (req, res) => {
-    const { customersign, estimateId, customerName,userEmail, customerEmail,documentNumber,lastupdated } = req.body;
+    const { customersign, estimateId,userid, customerName, customerEmail,documentNumber,lastupdated } = req.body;
 
     if (!estimateId) {
       return res.status(400).json({ message: 'Invalid Estimate ID' });
@@ -190,7 +190,7 @@ router.post('/customersignature', (req, res) => {
         estimateId,
         customerName,
         customerEmail,
-        userEmail,
+        userid,
         customersign,
         documentNumber,
         lastupdated
@@ -202,18 +202,17 @@ router.post('/customersignature', (req, res) => {
 });
 
 // Add this route to update customer signature
-router.put('/customersignature/:email', async (req, res) => {
-    const { email } = req.params;
-    const { customersign, estimateId,userEmail, customerName, documentNumber, status,lastupdated } = req.body;
+router.put('/updatecustomersignature/:estimateId', async (req, res) => {
+    const { estimateId } = req.params;
+    const { customersign, customerName, documentNumber, status,lastupdated } = req.body;
   
     try {
       const customerSignature = await CustomerSignatureSchema.findOneAndUpdate(
-        { customerEmail: email },
+        { estimateId: estimateId },
         {
           customersign,
           estimateId,
           customerName,
-          userEmail,
           documentNumber,
           status,
           lastupdated
