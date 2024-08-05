@@ -180,7 +180,7 @@ router.put('/update-ownersignature', async (req, res) => {
 
 
 router.post('/customersignature', (req, res) => {
-    const { customersign, estimateId,userid, customerName, customerEmail,documentNumber,lastupdated } = req.body;
+    const { customersign, estimateId,userid, customerName, customerEmail,documentNumber,lastupdated,completeButtonVisible } = req.body;
 
     if (!estimateId) {
       return res.status(400).json({ message: 'Invalid Estimate ID' });
@@ -193,7 +193,8 @@ router.post('/customersignature', (req, res) => {
         userid,
         customersign,
         documentNumber,
-        lastupdated
+        lastupdated,
+        completeButtonVisible
     });
 
     newSignature.save()
@@ -204,7 +205,7 @@ router.post('/customersignature', (req, res) => {
 // Add this route to update customer signature
 router.put('/updatecustomersignature/:estimateId', async (req, res) => {
     const { estimateId } = req.params;
-    const { customersign, customerName, documentNumber, status,lastupdated } = req.body;
+    const { customersign, customerName, documentNumber, status,lastupdated,completeButtonVisible } = req.body;
   
     try {
       const customerSignature = await CustomerSignatureSchema.findOneAndUpdate(
@@ -215,7 +216,8 @@ router.put('/updatecustomersignature/:estimateId', async (req, res) => {
           customerName,
           documentNumber,
           status,
-          lastupdated
+          lastupdated,
+          completeButtonVisible
         },
         { new: true }
       );

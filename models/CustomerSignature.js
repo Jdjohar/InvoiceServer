@@ -37,6 +37,11 @@ const CustomerSignatureSchema = new Schema({
         type: String, 
         // required: true 
     }, 
+    completeButtonVisible: { 
+        type: Boolean, 
+        default: false 
+    },
+    
     lastupdated: { 
         type: String,  
     }, 
