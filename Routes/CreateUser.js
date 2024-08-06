@@ -177,8 +177,6 @@ router.put('/update-ownersignature', async (req, res) => {
     }
 });
 
-
-
 router.post('/customersignature', (req, res) => {
     const { customersign, estimateId,userid, customerName, customerEmail,documentNumber,lastupdated,completeButtonVisible } = req.body;
 
@@ -307,7 +305,6 @@ router.get('/getemailownerdata/:ownerId', async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
-
   
   // Get signature route
 router.get('/ownersignature/:id', (req, res) => {
@@ -2500,21 +2497,11 @@ router.get('/getestimatedata/:estimateid', async (req, res) => {
 router.get('/getemailestimatedata/:estimateid', async (req, res) => {
     try {
         const estimateid = req.params.estimateid;
-        // let authtoken = req.headers.authorization;
-
-        // Verify JWT token
-        // const decodedToken = jwt.verify(authtoken, jwrsecret);
-        // console.log(decodedToken);
         const estimatedetail = await Estimate.findById(estimateid);
 
         res.json(estimatedetail);
     } catch (error) {
         console.error(error);
-        // Handle token verification errors
-        // if (error.name === 'JsonWebTokenError') {
-        //     return res.status(401).json({ message: 'Unauthorized: Invalid token' });
-        // }
-        // Handle other errors
         res.status(500).json({ message: 'Internal server error' });
     }
 });
