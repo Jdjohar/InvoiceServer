@@ -1097,6 +1097,80 @@ router.post('/send-estimate-email', async (req, res) => {
     }
 });
 
+router.post('/send-estimate-signed-email', async (req, res) => {
+    const {
+        to,
+        estimateId,
+        ownerId,
+        documentNumber,
+        customerName
+    } = req.body;
+
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: "jdwebservices1@gmail.com",
+            pass: "cwoxnbrrxvsjfbmr"
+        },
+    });
+
+    const mailOptions = {
+        from: 'jdwebservices1@gmail.com',
+        to: to,
+        subject: 'Your document has been signed',
+        html: `<html>
+        <body style="background-color:#c5c1c187; margin-top: 40px; padding:20px 0px;">
+             <section style="font-family:sans-serif; width: 50%; margin: auto; background-color:#fff; padding: 15px 30px; margin-top: 40px;">
+                <div style="padding: 10px 0px;  text-align: center; font-weight: 500; color: #999999">
+                </div>
+                <div>
+                    <h1 style="margin-bottom:0px; font-size: 32px; color:#222">${customerName} has signed your document</h1>
+                </div>
+                <div>
+                    <p style="margin-bottom:10px; font-size: 18px; color:#222; padding-bottom:25px;">Document signed: <span style="font-weight:bold"> ${documentNumber} has been signed by ${customerName}.</span></p>
+                </div><hr/>
+                <div>
+                    <p style="margin-bottom:0px; padding-top:10px; padding-bottom:15px; font-size: 14px; color:#222"><span style="font-weight:bold">DO NOT </span>share this email</p>
+                </div>
+                <div style="padding: 1px 5px; margin: 0px 0px 10px;">
+                    <p style="color:#222">This email contains a unique link just for you. 
+                        Please do not share this email or link or others will have access to your document.
+                    </p>
+                </div>
+            </section>
+            <section style="font-family:sans-serif; width: 50%; margin: auto; background-color:#f5f4f4; padding: 35px 30px; margin-bottom: 40px;">
+                <div>
+                    <h1 style="font-size: 35px; margin-bottom: 0; margin-top: 0; color:#222">ESTIMATE</h1>
+                </div>
+                <div>
+                    <ul style="text-align: center;display: inline-flex;list-style:none;padding-left:0px">
+                        <li>
+                            <a href="">
+                                <img src="https://static.xx.fbcdn.net/rsrc.php/yb/r/hLRJ1GG_y0J.ico" alt="facebook icon" style="margin: 0px 5px;">
+                            </a>
+                        </li>
+                        <li>
+                            <a href="">
+                                <img src="https://static.cdninstagram.com/rsrc.php/y4/r/QaBlI0OZiks.ico" alt="instagram icon" style="margin: 0px 5px;">
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+        </body>
+            </html>`,
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log('Email sent successfully!');
+        res.status(200).json({ success: true });
+    } catch (error) {
+        console.error('Error sending email:', error);
+        res.status(500).json({ success: false, error: 'Failed to send email.' });
+    }
+});
+
 router.get('/dashboard/:userid', async (req, res) => {
     try {
         let userid = req.params.userid;
