@@ -78,6 +78,14 @@ const InvoiceSchema = new Schema({
         type: Date,
         default: Date.now,
     },
+    isAddSignature: { 
+        type: Boolean, 
+        default: false 
+    },
+    isCustomerSign: { 
+        type: Boolean, 
+        default: false 
+    } 
 
 });
 

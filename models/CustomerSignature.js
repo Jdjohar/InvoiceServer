@@ -4,8 +4,23 @@ const { Schema } = mongoose;
 const CustomerSignatureSchema = new Schema({
     estimateId: {  
         type: Schema.Types.ObjectId, 
-        required: true, 
+        // required: true, 
         ref: 'Estimate' 
+    },
+    invoiceId: {  
+        type: Schema.Types.ObjectId, 
+        // required: true, 
+        ref: 'Invoice' 
+    },
+    userid: {  
+        type: String, 
+        required: true 
+    },
+    ownerEmail: {  
+        type: String, 
+    },
+    ownerId: {  
+        type: String, 
     },
     customerName: { 
         type: String, 
@@ -27,6 +42,11 @@ const CustomerSignatureSchema = new Schema({
         type: String, 
         // required: true 
     }, 
+    completeButtonVisible: { 
+        type: Boolean, 
+        default: false 
+    },
+    
     lastupdated: { 
         type: String,  
     }, 
