@@ -16,6 +16,7 @@ const WeeklyOffers = require('../models/WeeklyOffers')
 const Offers = require('../models/Offers');
 const UserPreference = require('../models/UserPreference');
 const Timeschema = require('../models/Timeschema');
+const LocationModel = require('../models/Location');
 const Team = require('../models/Team');
 const Customerlist = require('../models/Customerlist');
 const Invoice = require('../models/Invoice');
@@ -1440,23 +1441,26 @@ router.post('/reset-password', async (req, res) => {
 
 router.post('/clockin', async (req, res) => {
     try {
-        const { userid, username, userEmail, isTeamMember } = req.body;
+        const { userid, username, userEmail, isTeamMember, locations } = req.body;
 
         const startTime = new Date();
         const options = { timeZone: 'Asia/Kolkata', timeZoneName: 'short' };
         const formattedStartTime = startTime.toLocaleString('en-US', options);
         let authtoken = req.headers.authorization;
-
+        console.log(authtoken, "+++++++++++++++++++++++++");
+        // console.log(authtoken, jwrsecret, "-------------------------------------------");
         // Verify JWT token
         const decodedToken = jwt.verify(authtoken, jwrsecret);
-        console.log(decodedToken);
+        console.log(decodedToken, "-------------------------------------------");
 
         const newClockEntry = new Timeschema({
             startTime: formattedStartTime,
             userid: userid,
             username: username,
             isteamMember: isTeamMember,
+            locations: locations // Save the locations
         });
+console.log(newClockEntry, "newClockEntry");
 
         try {
             await newClockEntry.save();
@@ -1475,6 +1479,68 @@ router.post('/clockin', async (req, res) => {
     }
 });
 
+// router.post('/trackLocation', async (req, res) => {
+//     try {
+//         const { lat, lng, userid } = req.body;
+//         const authtoken = req.headers.authorization;
+
+//         // Check if authtoken is present
+//         if (!authtoken) {
+//             return res.status(401).json({ message: 'Authorization token is required' });
+//         }
+
+//         const decodedToken = jwt.verify(authtoken, jwrsecret);
+//         console.log(decodedToken)
+//         const newLocation = {
+//             userid,
+//             lat,
+//             lng,
+//             timestamp: new Date().toISOString()
+//         };
+
+//         console.log(newLocation, "newLocation");
+
+//         const LocationSchema = new LocationModel(newLocation);
+//         await LocationSchema.save();
+
+//         res.json({ message: 'Location tracked successfully' });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: 'Error tracking location' });
+//     }
+// });
+router.post('/trackLocation', async (req, res) => {
+    const { userid, lat, lng } = req.body;
+
+    try {
+        const newLocation = new LocationModel({
+            userid: userid,
+            lat: lat,
+            lng: lng
+        });
+
+        
+        console.log(newLocation, "update");
+        await newLocation.save(); // Save to the database
+        res.status(201).json({ message: 'Location saved successfully' });
+    } catch (error) {
+        console.error('Error saving location data:', error);
+        res.status(500).json({ message: 'Error saving location data' });
+    }
+});
+
+router.get('/getUserLocations/:userid', async (req, res) => {
+    const { userid } = req.params;
+
+    try {
+        const locations = await LocationModel.find({ userid }); // Find all locations for the given user ID
+        res.json(locations); // Send back the locations
+    } catch (error) {
+        console.error('Error fetching user locations:', error);
+        res.status(500).json({ message: 'Error fetching user locations' });
+    }
+});
+
 router.post('/clockout', async (req, res) => {
     try {
         const { userid, username, userEmail, isTeamMember } = req.body;
@@ -1482,6 +1548,8 @@ router.post('/clockout', async (req, res) => {
         const options = { timeZone: 'Asia/Kolkata', timeZoneName: 'short' };
         const formattedEndTime = endTime.toLocaleString('en-US', options);
         let authtoken = req.headers.authorization;
+        console.log(authtoken, "+++++++++++++++++++++++++");
+        
 
         // Verify JWT token
         const decodedToken = jwt.verify(authtoken, jwrsecret);

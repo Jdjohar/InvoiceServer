@@ -20,7 +20,15 @@ const TimeSchema = new Schema({
     
     
   timeInSeconds: { type: String },
+  
   totalTime: Object, 
+  locations: [
+    {
+        latitude: { type: Number, required: true },
+        longitude: { type: Number, required: true },
+        timestamp: { type: Date, default: Date.now } // Timestamp for when the location was recorded
+    }
+]
 });
 
 module.exports = mongoose.model('timeschema',TimeSchema)
