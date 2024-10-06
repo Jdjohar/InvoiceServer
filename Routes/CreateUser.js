@@ -1744,10 +1744,10 @@ router.post('/trackLocation', async (req, res) => {
         const newLocation = new LocationModel({
             userid: userid,
             lat: lat,
-            lng: lng
+            lng: lng,
+            timestamp: Date.now()  // Call Date.now() to get the current timestamp
         });
 
-        
         console.log(newLocation, "update");
         await newLocation.save(); // Save to the database
         res.status(201).json({ message: 'Location saved successfully' });
